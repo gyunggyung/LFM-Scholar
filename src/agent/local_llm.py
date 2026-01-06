@@ -87,6 +87,78 @@ class LocalLLM:
             except Exception as e:
                 print(f"Warning: Could not load adapter from {adapter_path}: {e}")
                 
+    def expand_queries(self, user_idea: str, base_queries: list = None) -> list:
+        """
+        Use LLM to expand search queries with related concepts.
+        E.g., "RNN faster than Transformer" -> ["Mamba", "RWKV", "Linear Attention", ...]
+        """
+        prompt = f"""### Instruction:
+You are a research assistant. Given a research idea, generate diverse academic search queries.
+
+Research Idea: "{user_idea}"
+
+Generate 5-8 search queries that include:
+1. Core concepts mentioned (e.g., RNN, LSTM, Transformer)
+2. Cutting-edge related techniques (e.g., if RNN → Mamba, RWKV, xLSTM, State Space Models)
+3. Comparison/efficiency keywords (e.g., efficient, linear complexity, parallel)
+4. Seminal papers keywords (e.g., "attention is all you need")
+
+Return ONLY a JSON array of strings. No explanation.
+Example output: ["LSTM efficiency", "Mamba state space model", "RNN vs Transformer speed"]
+
+### Response:
+"""
+        try:
+            if self.model_type == 'gguf':
+                output = self.model(
+                    prompt,
+                    max_tokens=256,
+                    temperature=0.3,
+                    min_p=0.15,
+                    repeat_penalty=1.05,
+                    echo=False,
+                    stop=["</s>", "[/INST]", "<|im_end|>", "\n\n"]
+                )
+                raw_output = output['choices'][0]['text'].strip()
+            else:
+                inputs = self.tokenizer(prompt, return_tensors="pt").to(self.device)
+                with torch.no_grad():
+                    outputs = self.model.generate(
+                        **inputs,
+                        max_new_tokens=256,
+                        temperature=0.3,
+                        do_sample=True,
+                        pad_token_id=self.tokenizer.pad_token_id
+                    )
+                raw_output = self.tokenizer.decode(outputs[0][inputs.input_ids.shape[1]:], skip_special_tokens=True).strip()
+            
+            # Parse JSON array from output
+            raw_output = self._clean_output(raw_output)
+            
+            # Try to extract JSON array
+            import json
+            # Find JSON array pattern
+            match = re.search(r'\[.*?\]', raw_output, re.DOTALL)
+            if match:
+                queries = json.loads(match.group())
+                if isinstance(queries, list):
+                    # Combine with base queries
+                    if base_queries:
+                        seen = set(q.lower() for q in base_queries)
+                        for q in queries:
+                            if isinstance(q, str) and q.lower() not in seen:
+                                base_queries.append(q)
+                                seen.add(q.lower())
+                        return base_queries[:10]  # Max 10 queries
+                    return queries[:8]
+            
+            print("[LLM] Could not parse query expansion output, using base queries only")
+            return base_queries or []
+            
+        except Exception as e:
+            print(f"[LLM] Query expansion failed: {e}")
+            return base_queries or []
+
     def cluster_papers(self, papers: List[Paper], n_clusters=3) -> Dict[int, List[Paper]]:
         """
         Cluster papers based on abstract embeddings to organize the narrative.

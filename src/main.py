@@ -179,6 +179,27 @@ def main():
     print(">>> Phase 2: Loading Local LLM...")
     llm = LocalLLM(config)
     
+    # 2.5 LLM-based Query Expansion (find Mamba, RWKV, etc.)
+    print(">>> Phase 2.5: Expanding queries with LLM...")
+    expanded_queries = llm.expand_queries(args.idea, queries.copy())
+    
+    # Search for new queries only
+    new_queries = [q for q in expanded_queries if q not in queries]
+    if new_queries:
+        print(f"[LLM] Expanded queries: {new_queries}")
+        for query in new_queries:
+            print(f"[Search] Searching: '{query}'")
+            new_papers = searcher.search_papers(query, limit=5, min_citations=0)
+            for paper in new_papers:
+                if paper.paper_id not in seen_ids:
+                    all_papers.append(paper)
+                    seen_ids.add(paper.paper_id)
+        
+        # Re-sort and limit
+        all_papers.sort(key=lambda p: p.citation_count, reverse=True)
+        papers = all_papers[:config['search'].get('top_k', 20)]
+        print(f"[LLM] Total papers after expansion: {len(papers)}")
+    
     # 3. Generate
     print(">>> Phase 3: Generating Related Work...")
     draft_text = llm.generate_related_work(args.idea, papers)
