@@ -136,11 +136,17 @@ def main():
     parser.add_argument("--output", type=str, default="related_work.md", help="Output file path")
     parser.add_argument("--mode", type=str, default="agent", choices=["classic", "agent"],
                         help="Search mode: 'classic' (rule-based) or 'agent' (LLM Tool Use)")
+    parser.add_argument("--model-variant", type=str, default=None, choices=["lfm2", "lfm2.5"],
+                        help="Model variant: 'lfm2' (fine-tuned 2.6B) or 'lfm2.5' (official 1.2B, faster)")
     args = parser.parse_args()
     
     print(">>> Initializing LFM-CiteAgent...")
     config = load_config(args.config)
     
+    # Override model variant if specified via CLI
+    if args.model_variant:
+        config['model']['variant'] = args.model_variant
+        print(f">>> Using model variant: {args.model_variant}")
     searcher = PaperSearcher(api_key=config.get('semantic_scholar_api_key'))
     
     if args.mode == "agent":

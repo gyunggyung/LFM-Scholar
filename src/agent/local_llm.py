@@ -35,10 +35,23 @@ class LocalLLM:
         except ImportError:
             raise ImportError("Please run: pip install llama-cpp-python huggingface_hub")
 
-        repo_id = self.config['model']['base']
-        filename = self.config['model'].get('file', 'LFM2-2.6B-Exp-Q4_K_M.gguf') 
+        # Get variant configuration (lfm2 or lfm2.5)
+        variant = self.config['model'].get('variant', 'lfm2')
+        variant_config = self.config['model'].get(variant, {})
         
-        print(f"Loading GGUF Model: {repo_id}/{filename} for CPU...")
+        # Fallback to legacy config if variant config not found
+        repo_id = variant_config.get('base', self.config['model'].get('base', 'gyung/LFM-CiteAgent-2.6B-GGUF'))
+        filename = variant_config.get('file', self.config['model'].get('file', 'LFM2-2.6B-Exp.Q4_K_M.gguf'))
+        
+        # Store generation params per variant
+        self.generation_params = variant_config.get('generation', {
+            'temperature': 0.3,
+            'min_p': 0.15,
+            'repetition_penalty': 1.05
+        })
+        self.variant = variant
+        
+        print(f"Loading GGUF Model: {repo_id}/{filename} (variant: {variant}) for CPU...")
         
         # Download model (if not cached)
         try:
@@ -49,7 +62,7 @@ class LocalLLM:
             try:
                 from huggingface_hub import list_repo_files
                 files = list_repo_files(repo_id)
-                gguf_files = [f for f in files if f.endswith('.gguf') and 'Q4_K_M' in f]
+                gguf_files = [f for f in files if f.endswith('.gguf') and 'Q4_K_M' in f.upper()]
                 if not gguf_files:
                     gguf_files = [f for f in files if f.endswith('.gguf')]
                 
@@ -57,7 +70,6 @@ class LocalLLM:
                     alt_filename = gguf_files[0]
                     print(f"Found alternative: {alt_filename}")
                     model_path = hf_hub_download(repo_id=repo_id, filename=alt_filename)
-                    self.config['model']['file'] = alt_filename # Update config
                 else:
                     raise FileNotFoundError(f"No GGUF files found in {repo_id}")
             except Exception as inner_e:
@@ -73,7 +85,7 @@ class LocalLLM:
             n_threads=physical_cores,
             verbose=False 
         )
-        print(f"LFM2 GGUF Loaded (Threads: {physical_cores}, Context: 4096)")
+        print(f"{variant.upper()} GGUF Loaded (Threads: {physical_cores}, Context: 4096)")
         self.tokenizer = None 
 
     def _init_transformers(self):
@@ -223,12 +235,16 @@ List of tools: <|tool_list_start|>{tools_json}<|tool_list_end|>"""
                 if hasattr(self.model, "reset"):
                     self.model.reset()  # Force reset to avoid KV cache fragmentation/overflow
                     
+                # Use variant-specific generation params
+                gen_params = getattr(self, 'generation_params', {'temperature': 0.3, 'min_p': 0.15, 'repetition_penalty': 1.05})
                 output = self.model(
                     prompt,
                     max_tokens=256,
-                    temperature=0.3,
-                    min_p=0.15,
-                    repeat_penalty=1.05,
+                    temperature=gen_params.get('temperature', 0.3),
+                    top_k=gen_params.get('top_k', 0),  # 0 = disabled
+                    top_p=gen_params.get('top_p', 1.0),
+                    min_p=gen_params.get('min_p', 0.0),
+                    repeat_penalty=gen_params.get('repetition_penalty', 1.05),
                     echo=False,
                     stop=["<|im_end|>", "</s>"]
                 )
@@ -321,12 +337,15 @@ Example output: ["LSTM efficiency", "Mamba state space model 2025", "RNN vs Tran
 """
         try:
             if self.model_type == 'gguf':
+                gen_params = getattr(self, 'generation_params', {'temperature': 0.3, 'min_p': 0.15, 'repetition_penalty': 1.05})
                 output = self.model(
                     prompt,
                     max_tokens=256,
-                    temperature=0.3,
-                    min_p=0.15,
-                    repeat_penalty=1.05,
+                    temperature=gen_params.get('temperature', 0.3),
+                    top_k=gen_params.get('top_k', 0),
+                    top_p=gen_params.get('top_p', 1.0),
+                    min_p=gen_params.get('min_p', 0.0),
+                    repeat_penalty=gen_params.get('repetition_penalty', 1.05),
                     echo=False,
                     stop=["</s>", "[/INST]", "<|im_end|>", "\n\n"]
                 )
@@ -404,8 +423,30 @@ Example output: ["LSTM efficiency", "Mamba state space model 2025", "RNN vs Tran
                 abstract_preview = (p.abstract[:300] + "...") if p.abstract else "(No Abstract)"
                 context_text += f"[{key}] {p.title}\nAbstract: {abstract_preview}\n\n"
                 
-        # 2. Construct Prompt (Preserving our Agent prompt style)
-        prompt = f"""### Instruction:
+        # 2. Construct Prompt based on model variant
+        variant = getattr(self, 'variant', 'lfm2')
+        
+        if variant == 'lfm2.5':
+            # ChatML format for LFM2.5
+            prompt = f"""<|im_start|>system
+You are an expert researcher.<|im_end|>
+<|im_start|>user
+Write a 'Related Work' section for a new paper based on the User Idea.
+Discuss the references provided below. Group them by themes.
+Use citation keys like [AuthorYearKeyword] strictly from the provided list.
+Do not hallucinate citations.
+
+[User Idea]
+{user_idea}
+
+[References]
+{context_text}
+<|im_end|>
+<|im_start|>assistant
+"""
+        else:
+            # Alpaca format for LFM2
+            prompt = f"""### Instruction:
 You are an expert researcher. Write a 'Related Work' section for a new paper based on the User Idea.
 Discuss the references provided below. Group them by themes.
 Use citation keys like [AuthorYearKeyword] strictly from the provided list.
@@ -429,12 +470,15 @@ Do not hallucinate citations.
             if hasattr(self.model, "reset"):
                 self.model.reset()
                 
+            gen_params = getattr(self, 'generation_params', {'temperature': 0.3, 'min_p': 0.15, 'repetition_penalty': 1.05})
             output = self.model(
                 prompt,
                 max_tokens=max_new_tokens,
-                temperature=0.3, # User recommendation
-                min_p=0.15,      # User recommendation for LFM2
-                repeat_penalty=1.05,
+                temperature=gen_params.get('temperature', 0.3),
+                top_k=gen_params.get('top_k', 0),
+                top_p=gen_params.get('top_p', 1.0),
+                min_p=gen_params.get('min_p', 0.0),
+                repeat_penalty=gen_params.get('repetition_penalty', 1.05),
                 echo=False,
                 stop=["</s>", "[/INST]", "<|im_end|>"] 
             )

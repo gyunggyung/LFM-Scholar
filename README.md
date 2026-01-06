@@ -28,11 +28,14 @@ cd LFM-Scholar
 pip install -r requirements.txt
 ```
 
-### Usage
+### Usage & Example
 
 ```bash
-# 대충 아이디어 입력
+# 기본 사용 (LFM2-2.6B 모델)
 python src/main.py --idea "I want to make RNN models like LSTM and GRU faster than Transformers"
+
+# 빠른 모드 (LFM2.5-1.2B 모델) 및 출력 파일 지정
+python src/main.py --idea "I want to make RNN models like LSTM and GRU faster than Transformers" --model-variant lfm2.5 --output my_related_work.md
 
 # 결과 확인
 cat related_work.md
@@ -41,11 +44,16 @@ cat related_work.md
 **입력**: 대충 쓴 아이디어  
 **출력**: 관련 논문 20개 + Related Work 초안 + BibTeX
 
-## 📖 Example
+### Model Variants
 
-```bash
-$ python src/main.py --idea "I want to make RNN models like LSTM and GRU faster than Transformers"
-```
+| 옵션 | 모델 | 특징 |
+|:---:|:---|:---|
+| `--model-variant lfm2` | LFM2-2.6B (기본값) | ✅ 높은 품질, 다양한 쿼리 생성 |
+| `--model-variant lfm2.5` | LFM2.5-1.2B | ⚡ 빠른 속도, 낮은 메모리, Hallucination 적음 |
+
+> **💡 권장**: 품질이 중요하면 `lfm2` (기본값), 빠른 초안이 필요하면 `lfm2.5`
+
+**실행 결과 예시:**
 
 ```
 # 자동 추출된 검색 쿼리
@@ -75,7 +83,17 @@ vanishing gradient problem...
 semantic_scholar_api_key: ""  # 선택사항 (없어도 동작)
 model:
   type: "gguf"
-  base: "gyung/LFM-CiteAgent-2.6B-GGUF"
+  variant: "lfm2"  # 'lfm2' (2.6B, 고품질) 또는 'lfm2.5' (1.2B, 고속)
+  
+  # LFM2: 파인튜닝된 2.6B 모델 (기본값)
+  lfm2:
+    base: "gyung/LFM-CiteAgent-2.6B-GGUF"
+    file: "LFM2-2.6B-Exp.Q4_K_M.gguf"
+    
+  # LFM2.5: 파인튜닝된 1.2B 모델 (빠름)
+  lfm2.5:
+    base: "gyung/LFM2.5-CiteAgent-1.2B-v1-GGUF"
+    file: "LFM2.5-1.2B-Instruct.Q4_K_M.gguf"
 ```
 
 ## 🔄 Search Strategy (Fallback)
@@ -112,12 +130,13 @@ LFM-Scholar/
 
 ## 🗺️ Roadmap
 
-### ✅ v1.1 (Current)
+### ✅ v1.2 (Current)
 - [x] Multi-API Fallback (Semantic Scholar → OpenAlex → arXiv)
 - [x] 다중 쿼리 검색 (패턴 기반 + LLM 확장)
 - [x] 최신 논문(2024+) 우선 검색 로직
 - [x] 환각 탐지 기능
-- [x] `<think>` 태그 필터링
+- [x] **Model Variant 선택** (`--model-variant lfm2/lfm2.5`)
+- [x] LFM2.5 파인튜닝 및 통합 (빠른 추론 옵션)
 
 ### 🔜 v2.0 (Next)
 - [ ] **Assistant Mode**: Overleaf 연동하여 기존 텍스트에 인용 자동 삽입
@@ -127,6 +146,7 @@ LFM-Scholar/
 ### 📋 Long-term
 - [ ] 로컬 벡터 DB (오프라인 검색)
 - [ ] SFT 학습 (인용 위치 식별)
+- [ ] LFM2.5 추가 학습으로 품질 개선
 
 ## 🤝 Contributing
 

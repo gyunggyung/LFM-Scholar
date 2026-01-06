@@ -32,7 +32,7 @@ models/
 *.log
 *.txt
 test_trace*
-plan/
+# plan/
 test_code/
 tests/
 
@@ -46,3 +46,12 @@ output/
 
 # Environment
 .env
+
+# Data
+data/arxiv_source/
+
+# No Upload
+src/training/
+colab/
+data/
+plan/
