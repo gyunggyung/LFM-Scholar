@@ -2,6 +2,7 @@ import torch
 import re
 from typing import List, Dict
 import os
+import json
 try:
     from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
     from peft import PeftModel
@@ -40,18 +41,38 @@ class LocalLLM:
         print(f"Loading GGUF Model: {repo_id}/{filename} for CPU...")
         
         # Download model (if not cached)
-        model_path = hf_hub_download(repo_id=repo_id, filename=filename)
+        try:
+            model_path = hf_hub_download(repo_id=repo_id, filename=filename)
+        except Exception as e:
+            print(f"Warning: Failed to download {filename}: {e}")
+            print("Attempting to find alternative GGUF files in repository...")
+            try:
+                from huggingface_hub import list_repo_files
+                files = list_repo_files(repo_id)
+                gguf_files = [f for f in files if f.endswith('.gguf') and 'Q4_K_M' in f]
+                if not gguf_files:
+                    gguf_files = [f for f in files if f.endswith('.gguf')]
+                
+                if gguf_files:
+                    alt_filename = gguf_files[0]
+                    print(f"Found alternative: {alt_filename}")
+                    model_path = hf_hub_download(repo_id=repo_id, filename=alt_filename)
+                    self.config['model']['file'] = alt_filename # Update config
+                else:
+                    raise FileNotFoundError(f"No GGUF files found in {repo_id}")
+            except Exception as inner_e:
+                raise ImportError(f"Could not download model: {inner_e}")
         
-        # CPU Optimization logic (from user snippet)
+        # CPU Optimization logic
         physical_cores = os.cpu_count() // 2 if os.cpu_count() else 4
         
         self.model = Llama(
             model_path=model_path,
-            n_ctx=4096, # Expanded context as per user reference
+            n_ctx=4096, # Optimized Context Size
             n_threads=physical_cores,
             verbose=False 
         )
-        print(f"LFM2 GGUF Loaded (Threads: {physical_cores})")
+        print(f"LFM2 GGUF Loaded (Threads: {physical_cores}, Context: 4096)")
         self.tokenizer = None 
 
     def _init_transformers(self):
@@ -86,11 +107,199 @@ class LocalLLM:
                 self.model = PeftModel.from_pretrained(self.model, adapter_path)
             except Exception as e:
                 print(f"Warning: Could not load adapter from {adapter_path}: {e}")
-                
+
+    def _get_tool_definitions(self) -> list:
+        """Define tools for LFM2 function calling (optimized for length)."""
+        return [
+            {
+                "name": "search_paper",
+                "description": "Find papers. Use MULTIPLE times.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": "Keywords (2-4 words)"
+                        }
+                    },
+                    "required": ["query"]
+                }
+            }
+        ]
+
+    def _parse_tool_calls(self, text: str) -> list:
+        """Parse tool calls from LFM2 output."""
+        import ast
+        tool_calls = []
+        
+        # DEBUG: Log raw text for analysis
+        print(f"[DEBUG] Parsing text for tools: {text[:100]}...")
+
+        # 1. Try standard LFM2 format with special tokens
+        pattern_token = r'<\|tool_call_start\|>\s*\[(.*?)\]\s*<\|tool_call_end\|>'
+        matches = re.findall(pattern_token, text, re.DOTALL)
+        
+        # 2. If no special tokens, try finding the list text directly [func(...)]
+        # This handles GGUF models that might skip special tokens (e.g. Unsloth versions)
+        if not matches:
+            fallback_pattern = r'\[\s*\w+\s*\(.*?\)\s*\]'
+            fallback_matches = re.findall(fallback_pattern, text, re.DOTALL)
+            if fallback_matches:
+                print("[DEBUG] Found tool calls via fallback text pattern")
+                matches = [m.strip('[]') for m in fallback_matches]
+        
+        # If still no matches, try finding raw function calls without list brackets
+        if not matches:
+             raw_call_pattern = r'search_paper\s*\(.*?\)'
+             raw_matches = re.findall(raw_call_pattern, text)
+             if raw_matches:
+                 print("[DEBUG] Found raw function calls")
+                 matches = [", ".join(raw_matches)]
+
+        for match in matches:
+            # Parse Pythonic function calls like: search_paper(query="Mamba")
+            func_pattern = r'(\w+)\((.*?)\)'
+            func_matches = re.findall(func_pattern, match)
+            
+            for func_name, args_str in func_matches:
+                try:
+                    # Parse keyword arguments
+                    args = {}
+                    arg_pattern = r'(\w+)\s*=\s*["\']([^"\']+)["\']'
+                    arg_matches = re.findall(arg_pattern, args_str)
+                    for arg_name, arg_value in arg_matches:
+                        args[arg_name] = arg_value
+                    
+                    if args:
+                        tool_calls.append({"name": func_name, "arguments": args})
+                except Exception as e:
+                    print(f"[Agent] Failed to parse tool call: {e}")
+                    continue
+        
+        return tool_calls
+
+    def search_with_tools(self, user_idea: str, paper_searcher) -> list:
+        """
+        Use LFM2 Tool Use to dynamically search for papers.
+        LLM decides what to search based on the research idea.
+        """
+        tools = self._get_tool_definitions()
+        tools_json = json.dumps(tools, ensure_ascii=False)
+        
+        # Build system prompt with tools (LFM2 ChatML format)
+        system_prompt = f"""You are an expert research assistant. Find relevant academic papers.
+
+You have access to a paper search tool. Use it to find papers for:
+1. Core concepts (models, methods)
+2. Cutting-edge alternatives (e.g., Mamba, RWKV, xLSTM)
+3. Comparison targets (e.g., "faster than X")
+4. Seminal papers
+
+Call search_paper multiple times with DIFFERENT queries.
+Queries must be SHORT (2-4 words).
+
+List of tools: <|tool_list_start|>{tools_json}<|tool_list_end|>"""
+
+        user_prompt = f"Find relevant academic papers for this research idea: {user_idea}"
+        
+        # Construct prompt in LFM2 ChatML format
+        prompt = f"""<|startoftext|><|im_start|>system
+{system_prompt}<|im_end|>
+<|im_start|>user
+{user_prompt}<|im_end|>
+<|im_start|>assistant
+"""
+        
+        all_papers = []
+        seen_ids = set()
+        max_iterations = 5
+        
+        print("\n[Agent] Analyzing research idea with LFM2 Tool Use...")
+        
+        for iteration in range(max_iterations):
+            # Generate response
+            if self.model_type == 'gguf':
+                if hasattr(self.model, "reset") and iteration > 0:
+                    pass  # Don't reset between iterations
+                    
+                output = self.model(
+                    prompt,
+                    max_tokens=256,
+                    temperature=0.3,
+                    min_p=0.15,
+                    repeat_penalty=1.05,
+                    echo=False,
+                    stop=["<|im_end|>", "</s>"]
+                )
+                response_text = output['choices'][0]['text'].strip()
+            else:
+                inputs = self.tokenizer(prompt, return_tensors="pt").to(self.device)
+                with torch.no_grad():
+                    outputs = self.model.generate(
+                        **inputs,
+                        max_new_tokens=256,
+                        temperature=0.3,
+                        do_sample=True,
+                        pad_token_id=self.tokenizer.pad_token_id
+                    )
+                response_text = self.tokenizer.decode(
+                    outputs[0][inputs.input_ids.shape[1]:], 
+                    skip_special_tokens=False
+                ).strip()
+            
+            # DEBUG: Print raw LLM output
+            print(f"\n[DEBUG] Iteration {iteration + 1} - LLM Response:")
+            print(f"[DEBUG] {response_text[:500]}...")
+            print(f"[DEBUG] Contains tool_call_start: {'<|tool_call_start|>' in response_text}")
+            
+            # Check for tool calls
+            tool_calls = self._parse_tool_calls(response_text)
+            
+            if not tool_calls:
+                print(f"[Agent] LLM finished searching after {iteration + 1} iterations (no tool calls found)")
+                break
+            
+            # Execute tool calls
+            tool_responses = []
+            for call in tool_calls:
+                if call["name"] == "search_paper":
+                    query = call["arguments"].get("query", "")
+                    if query:
+                        print(f"[Agent] Tool call: search_paper(query=\"{query}\")")
+                        # 3 papers search, but only top 2 used in prompt
+                        papers = paper_searcher.search_papers(query, limit=3, min_citations=0)
+                        
+                        # Add new papers
+                        for paper in papers:
+                            if paper.paper_id not in seen_ids:
+                                all_papers.append(paper)
+                                seen_ids.add(paper.paper_id)
+                        
+                        # Format response (Minimal format to save tokens)
+                        results = [{"t": p.title, "y": p.year} for p in papers[:2]]
+                        tool_responses.append(json.dumps(results, ensure_ascii=False))
+            
+            if not tool_responses:
+                break
+            
+            # Build next prompt with tool responses
+            tool_response_text = "; ".join(tool_responses)
+            prompt += f"""{response_text}<|im_end|>
+<|im_start|>tool
+<|tool_response_start|>{tool_response_text}<|tool_response_end|><|im_end|>
+<|im_start|>assistant
+"""
+        
+        print(f"[Agent] Found {len(all_papers)} papers via LFM2 Tool Use")
+        
+        # Sort by citation count
+        all_papers.sort(key=lambda p: p.citation_count, reverse=True)
+        
+        return all_papers
+
     def expand_queries(self, user_idea: str, base_queries: list = None) -> list:
         """
         Use LLM to expand search queries with related concepts.
-        E.g., "RNN faster than Transformer" -> ["Mamba", "RWKV", "Linear Attention", ...]
         """
         prompt = f"""### Instruction:
 You are a research assistant. Given a research idea, generate diverse academic search queries.
@@ -102,9 +311,10 @@ Generate 5-8 search queries that include:
 2. Cutting-edge related techniques (e.g., if RNN → Mamba, RWKV, xLSTM, State Space Models)
 3. Comparison/efficiency keywords (e.g., efficient, linear complexity, parallel)
 4. Seminal papers keywords (e.g., "attention is all you need")
+5. **Latest research keywords (e.g., "2025", "2026", "review 2024")**
 
 Return ONLY a JSON array of strings. No explanation.
-Example output: ["LSTM efficiency", "Mamba state space model", "RNN vs Transformer speed"]
+Example output: ["LSTM efficiency", "Mamba state space model 2025", "RNN vs Transformer speed 2026"]
 
 ### Response:
 """
@@ -136,8 +346,6 @@ Example output: ["LSTM efficiency", "Mamba state space model", "RNN vs Transform
             raw_output = self._clean_output(raw_output)
             
             # Try to extract JSON array
-            import json
-            # Find JSON array pattern
             match = re.search(r'\[.*?\]', raw_output, re.DOTALL)
             if match:
                 queries = json.loads(match.group())
@@ -233,9 +441,7 @@ Do not hallucinate citations.
             return self._clean_output(raw_output)
             
         else:
-            # Transformers Inference
             inputs = self.tokenizer(prompt, return_tensors="pt").to(self.device)
-            
             with torch.no_grad():
                 outputs = self.model.generate(
                     **inputs,
@@ -252,7 +458,6 @@ Do not hallucinate citations.
     def _clean_output(self, text: str) -> str:
         """
         Clean LLM output by removing internal reasoning tags.
-        Removes <think>...</think> blocks and <response>...</response> wrappers.
         """
         # Remove <think>...</think> blocks (including multiline)
         text = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL)

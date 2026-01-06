@@ -75,7 +75,7 @@ vanishing gradient problem...
 semantic_scholar_api_key: ""  # 선택사항 (없어도 동작)
 model:
   type: "gguf"
-  base: "gyung/LFM-Scholar-2.6B-GGUF"
+  base: "gyung/LFM-CiteAgent-2.6B-GGUF"
 ```
 
 ## 🔄 Search Strategy (Fallback)
@@ -114,7 +114,8 @@ LFM-Scholar/
 
 ### ✅ v1.1 (Current)
 - [x] Multi-API Fallback (Semantic Scholar → OpenAlex → arXiv)
-- [x] 다중 쿼리 검색 (패턴 기반)
+- [x] 다중 쿼리 검색 (패턴 기반 + LLM 확장)
+- [x] 최신 논문(2024+) 우선 검색 로직
 - [x] 환각 탐지 기능
 - [x] `<think>` 태그 필터링
 
@@ -125,7 +126,6 @@ LFM-Scholar/
 
 ### 📋 Long-term
 - [ ] 로컬 벡터 DB (오프라인 검색)
-- [ ] LLM 기반 쿼리 추출
 - [ ] SFT 학습 (인용 위치 식별)
 
 ## 🤝 Contributing

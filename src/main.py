@@ -134,71 +134,86 @@ def main():
     parser.add_argument("--idea", type=str, required=True, help="User's research idea or abstract")
     parser.add_argument("--config", type=str, default="config.yaml", help="Path to config file")
     parser.add_argument("--output", type=str, default="related_work.md", help="Output file path")
+    parser.add_argument("--mode", type=str, default="agent", choices=["classic", "agent"],
+                        help="Search mode: 'classic' (rule-based) or 'agent' (LLM Tool Use)")
     args = parser.parse_args()
     
     print(">>> Initializing LFM-CiteAgent...")
     config = load_config(args.config)
     
-    # 1. Search with multiple queries (Option B)
-    print(">>> Phase 1: Searching for relevant papers...")
     searcher = PaperSearcher(api_key=config.get('semantic_scholar_api_key'))
     
-    # Extract multiple queries using pattern matching
-    queries = extract_multiple_queries(args.idea)
-    print(f"[Search] Extracted {len(queries)} queries: {queries}")
+    if args.mode == "agent":
+        # Agent Mode: LLM decides what to search using Tool Use
+        print(">>> Mode: AGENT (LFM2 Tool Use)")
+        print(">>> Phase 1: Loading Local LLM...")
+        llm = LocalLLM(config)
+        
+        print(">>> Phase 2: LLM-driven Paper Search...")
+        all_papers = llm.search_with_tools(args.idea, searcher)
+        
+        if not all_papers:
+            print("No papers found via Tool Use. Falling back to classic mode...")
+            args.mode = "classic"
+        else:
+            papers = all_papers[:config['search'].get('top_k', 20)]
+            print(f"Found {len(papers)} papers via LLM Tool Use.")
     
-    # Search with each query and combine results
-    all_papers = []
-    seen_ids = set()
-    
-    for query in queries:
-        print(f"[Search] Searching: '{query}'")
-        papers = searcher.search_papers(query, limit=5, min_citations=0)  # Lower limit per query
-        for paper in papers:
-            if paper.paper_id not in seen_ids:
-                all_papers.append(paper)
-                seen_ids.add(paper.paper_id)
-    
-    # Sort by citation count
-    all_papers.sort(key=lambda p: p.citation_count, reverse=True)
-    papers = all_papers[:config['search'].get('top_k', 20)]
-    
-    if not papers:
-        print("No papers found. Try a different query.")
-        return
-
-    print(f"Found {len(papers)} papers total.")
-    
-    # Context Construction
-    context_text = ""
-    for p in papers:
-        abstract = p.abstract if p.abstract else "(No Abstract Available)"
-        context_text += f"[{p.paper_id}] {p.title}\n{abstract[:500]}...\n\n"
-    
-    # 2. Logic (Load Model)
-    print(">>> Phase 2: Loading Local LLM...")
-    llm = LocalLLM(config)
-    
-    # 2.5 LLM-based Query Expansion (find Mamba, RWKV, etc.)
-    print(">>> Phase 2.5: Expanding queries with LLM...")
-    expanded_queries = llm.expand_queries(args.idea, queries.copy())
-    
-    # Search for new queries only
-    new_queries = [q for q in expanded_queries if q not in queries]
-    if new_queries:
-        print(f"[LLM] Expanded queries: {new_queries}")
-        for query in new_queries:
+    if args.mode == "classic":
+        # Classic Mode: Rule-based query extraction
+        print(">>> Mode: CLASSIC (Rule-based)")
+        print(">>> Phase 1: Searching for relevant papers...")
+        
+        # Extract multiple queries using pattern matching
+        queries = extract_multiple_queries(args.idea)
+        print(f"[Search] Extracted {len(queries)} queries: {queries}")
+        
+        # Search with each query and combine results
+        all_papers = []
+        seen_ids = set()
+        
+        for query in queries:
             print(f"[Search] Searching: '{query}'")
-            new_papers = searcher.search_papers(query, limit=5, min_citations=0)
-            for paper in new_papers:
+            found_papers = searcher.search_papers(query, limit=5, min_citations=0)
+            for paper in found_papers:
                 if paper.paper_id not in seen_ids:
                     all_papers.append(paper)
                     seen_ids.add(paper.paper_id)
         
-        # Re-sort and limit
-        all_papers.sort(key=lambda p: p.citation_count, reverse=True)
+        # Sort by citation count (Prioritize recent papers 2024+)
+        all_papers.sort(key=lambda p: (1 if p.year and p.year >= 2024 else 0, p.citation_count), reverse=True)
         papers = all_papers[:config['search'].get('top_k', 20)]
-        print(f"[LLM] Total papers after expansion: {len(papers)}")
+        
+        if not papers:
+            print("No papers found. Try a different query.")
+            return
+        
+        print(f"Found {len(papers)} papers total.")
+        
+        # Load LLM for generation (if not already loaded)
+        print(">>> Phase 2: Loading Local LLM...")
+        llm = LocalLLM(config)
+        
+        # LLM-based Query Expansion (find Mamba, RWKV, etc.)
+        print(">>> Phase 2.5: Expanding queries with LLM...")
+        expanded_queries = llm.expand_queries(args.idea, queries.copy())
+        
+        # Search for new queries only
+        new_queries = [q for q in expanded_queries if q not in queries]
+        if new_queries:
+            print(f"[LLM] Expanded queries: {new_queries}")
+            for query in new_queries:
+                print(f"[Search] Searching: '{query}'")
+                new_papers = searcher.search_papers(query, limit=5, min_citations=0)
+                for paper in new_papers:
+                    if paper.paper_id not in seen_ids:
+                        all_papers.append(paper)
+                        seen_ids.add(paper.paper_id)
+            
+            # Re-sort and limit (Prioritize recent papers 2024+)
+            all_papers.sort(key=lambda p: (1 if p.year and p.year >= 2024 else 0, p.citation_count), reverse=True)
+            papers = all_papers[:config['search'].get('top_k', 20)]
+            print(f"[LLM] Total papers after expansion: {len(papers)}")
     
     # 3. Generate
     print(">>> Phase 3: Generating Related Work...")
@@ -214,8 +229,6 @@ def main():
         f.write("# Related Work\n\n")
         f.write(final_text)
         f.write("\n\n## References\n\n")
-        # In Markdown we might strictly want BibTeX at the end or formatted refs.
-        # But let's dump BibTeX for now as requested.
         f.write("```bibtex\n")
         f.write(bibtex)
         f.write("\n```\n")

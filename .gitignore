@@ -1,37 +1,10 @@
-# 민감 정보
-# config.yaml
-# config.yml
-
-# 추후 추가
-training/
-
-
-# 테스트 결과물
-# related_work.md
-*.copy.md
-# *related_work*.md
-# benchmarks/
-archive/
-test_code/
-
-# 내부 계획 문서 (공개하고 싶으면 제거)
-plan/task.md
-plan/comparison_analysis.md
-plan/failure_analysis_report.md
-
-# 모델 캐시
-models/
-*.gguf
-
-# data
-data/
-
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
+env/
 build/
 develop-eggs/
 dist/
@@ -48,33 +21,28 @@ wheels/
 .installed.cfg
 *.egg
 
-# 가상환경
-venv/
-ENV/
-env/
-.venv/
+# Models
+models/
+*.gguf
+*.bin
+*.pt
+*.safetensors
+
+# Logs and Debug
+*.log
+*.txt
+test_trace*
+plan/
+test_code/
+tests/
+
+# Output Artifacts
+related_work.md
+output/
 
 # IDE
-.idea/
 .vscode/
-*.swp
-*.swo
-*~
+.idea/
 
-# OS
-.DS_Store
-Thumbs.db
-
-# Jupyter
-.ipynb_checkpoints/
-
-# 로그
-*.log
-logs/
-
-# 임시 파일
-*.tmp
-*.temp
-tmp/
-temp/
-plan/
+# Environment
+.env
