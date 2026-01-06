@@ -1,0 +1,31 @@
+# LFM-CiteAgent Configuration
+
+# External API Keys using Environment Variables is recommended, but can be set here
+semantic_scholar_api_key: "" 
+
+# Model Configuration
+model:
+  # CPU Optimization Mode (GGUF)
+  type: "gguf" # 'transformers' or 'gguf'
+  base: "gyung/LFM-CiteAgent-2.6B-GGUF"
+  file: "LFM2-2.6B-Exp.Q4_K_M.gguf" # Check exact filename on HF
+  # adapter: "./models/lfm2-adapter" # Ignored in GGUF mode for now
+  max_length: 2048
+  # quantization: "4bit" # Ignored in GGUF mode
+
+# Search Configuration
+search:
+  top_k: 20
+  min_citations: 10
+  year_min: 2020
+  # Search engine priority (fallback order)
+  engines:
+    - semantic_scholar  # Best quality, has rate limits
+    - openalex          # No rate limit, good coverage
+    - arxiv             # Latest preprints, real-time
+
+# Generation Configuration
+generation:
+  temperature: 0.7
+  top_p: 0.9
+  max_new_tokens: 1024

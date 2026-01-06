@@ -1,0 +1,12 @@
+transformers>=4.40.0
+peft>=0.10.0
+trl>=0.8.0
+bitsandbytes>=0.43.0
+accelerate>=0.29.0
+sentence-transformers>=2.7.0
+requests>=2.31.0
+pyyaml>=6.0.1
+bibtexparser>=1.4.1
+scikit-learn>=1.4.0
+llama-cpp-python>=0.2.70
+huggingface_hub>=0.20.0
