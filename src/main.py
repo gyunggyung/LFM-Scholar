@@ -48,13 +48,16 @@ def extract_keywords(idea: str, max_words: int = 8) -> str:
 
 def extract_multiple_queries(idea: str) -> list:
     """
-    Option B: 패턴 기반 다중 쿼리 추출
+    패턴 기반 다중 쿼리 추출 (개선됨)
     1. 모델명 + 연도 패턴 (LSTM 1997, Transformers 2017)
     2. 대문자 약어 (RNN, LSTM, GRU)
-    3. 기본 키워드
+    3. 비교 대상 추출 (faster than X, better than X)
+    4. 목적 키워드 (efficient, speed, parallel 등)
+    5. 기본 키워드
     """
     import re
     queries = []
+    idea_lower = idea.lower()
     
     # 1. 모델명 + 연도 패턴 (예: "LSTMs (1997)", "Transformers in 2017")
     model_year_patterns = [
@@ -74,12 +77,48 @@ def extract_multiple_queries(idea: str) -> list:
         if acr not in [q.split()[0].upper() for q in queries]:
             queries.append(acr)
     
-    # 3. 기본 키워드 추출 (fallback)
+    # 3. 비교 대상 추출 (faster than X, better than X, compared to X, vs X)
+    comparison_patterns = [
+        r'(?:faster|better|efficient|superior)\s+than\s+(\w+)',
+        r'compared\s+to\s+(\w+)',
+        r'vs\.?\s+(\w+)',
+        r'versus\s+(\w+)',
+        r'outperform(?:s|ing)?\s+(\w+)',
+    ]
+    for pattern in comparison_patterns:
+        matches = re.findall(pattern, idea_lower)
+        for match in matches:
+            target = match.capitalize()
+            if len(target) > 2 and target.lower() not in [q.lower() for q in queries]:
+                queries.append(target)
+                # 비교 쿼리도 추가 (e.g., "RNN vs Transformer")
+                if acronyms:
+                    queries.append(f"{acronyms[0]} vs {target}")
+    
+    # 4. 목적 키워드 기반 확장 (efficiency, speed, parallel 등)
+    objective_keywords = {
+        'faster': ['efficient', 'speed', 'fast'],
+        'efficient': ['efficient', 'optimization'],
+        'speed': ['speed', 'fast', 'accelerate'],
+        'parallel': ['parallel', 'parallelization'],
+        'optimize': ['optimization', 'efficient'],
+        'scalable': ['scalable', 'scaling'],
+        'lightweight': ['lightweight', 'compact', 'efficient'],
+    }
+    for keyword, expansions in objective_keywords.items():
+        if keyword in idea_lower:
+            for acr in acronyms[:2]:  # 상위 2개 약어와 조합
+                for exp in expansions[:1]:  # 첫 번째 확장만
+                    combo = f"{exp} {acr}"
+                    if combo.lower() not in [q.lower() for q in queries]:
+                        queries.append(combo)
+    
+    # 5. 기본 키워드 추출 (fallback)
     basic = extract_keywords(idea, max_words=5)
     if basic:
         queries.append(basic)
     
-    # 중복 제거 및 최대 5개
+    # 중복 제거 및 최대 8개로 확장 (더 넓은 검색)
     seen = set()
     unique_queries = []
     for q in queries:
@@ -88,7 +127,7 @@ def extract_multiple_queries(idea: str) -> list:
             seen.add(q_lower)
             unique_queries.append(q)
     
-    return unique_queries[:5]
+    return unique_queries[:8]
 
 def main():
     parser = argparse.ArgumentParser(description="LFM-CiteAgent: Secure Local Research Agent")

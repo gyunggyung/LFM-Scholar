@@ -77,3 +77,4 @@ logs/
 *.temp
 tmp/
 temp/
+plan/

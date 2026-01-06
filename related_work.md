@@ -1,62 +1,72 @@
 # Related Work
 
-The following is a 'Related Work' section based on the User Idea to make RNN models like LSTM and GRU faster than Transformers.
+The following is a 'Related Work' section for the paper, organized by themes based on the provided references.
 
-**Theme 1: Efficient Recurrent Neural Network (RNN) Models**
-- [cho2014learning] Learning Phrase Representations using RNN Encoder–Decoder for Statistical Machine Translation  
-  Abstract: Introduces a novel neural network model, the RNN Encoder–Decoder, consisting of two RNNs. One encodes a sequence into a fixed-length vector, while the other decodes it back into another sequence. This approach is applied to statistical machine translation.
-- [greff2015lstm] LSTM: A Search Space Odyssey  
-  Abstract: Discusses the long short-term memory (LSTM) architecture, highlighting its ability to handle sequential data and address issues like vanishing gradients.
-- [sherstinsky2018fundamentals] Fundamentals of Recurrent Neural Network (RNN) and Long Short-Term Memory (LSTM)  
-  Abstract: Provides an overview of RNNs and LSTMs, including their applications and limitations.
-- [huang2015bidirectional] Bidirectional LSTM-CRF Models for Sequence Tagging  
-  Abstract: Explores bidirectional LSTM networks combined with conditional random fields (CRFs) for sequence tagging tasks.
+### Theme 1: Recurrent Neural Networks (RNNs) and Long Short-Term Memory (LSTM)
+- [hochreiter1997long] Long Short-Term Memory
+- [greff2015lstm] LSTM: A Search Space Odyssey
+- [sherstinsky2018fundamentals] Fundamentals of Recurrent Neural Network (RNN) and Long Short-Term Memory (LSTM) Network
+- [alselwi2024rnnlstm] RNN-LSTM: From applications to modeling techniques and beyond - Systematic review
 
-**Theme 2: Comparative Analysis of RNN Variants**
-- [thangavel2023novel] A novel method for image captioning using multimodal feature fusion employing mask RNN and LSTM models  
-  Abstract: Discusses the use of RNNs and LSTMs in image captioning, focusing on multimodal feature fusion.
-- [upadhyay2023enhancing] Enhancing Stock Market Predictability: A Comparative Analysis of RNN And LSTM Models for Retail Investors  
-  Abstract: Compares RNN and LSTM models for stock market prediction, evaluating their performance in predicting stock values.
+### Theme 2: Transformers and Attention Mechanisms
+- [touvron2020training] Training data-efficient image transformers & distillation through attention
+- [caron2021emerging] Emerging Properties in Self-Supervised Vision Transformers
+- [xie2021segformer] SegFormer: Simple and Efficient Design for Semantic Segmentation with Transformers
+- [chen2021transunet] TransUNet: Transformers Make Strong Encoders for Medical Image Segmentation
 
-**Theme 3: Optimization Techniques for RNNs**
-- [cao2024stock] Stock Price Prediction Using Deep-Learning Models: CNN, RNN, and LSTM  
-  Abstract: Compares the effectiveness of CNN, RNN, and LSTM models for stock price prediction.
-- [birdi2023forex] Forex trend analysis using RNN and LSTM models: Predictive analytics through neural networks  
-  Abstract: Examines the use of RNN and LSTM models for forex trend analysis and predictive analytics.
+### Theme 3: Deep Learning Models for Sequence Understanding
+- [devlin2019bert] BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding
+- [huang2015bidirectional] Bidirectional LSTM-CRF Models for Sequence Tagging
+- [karita2019comparative] A Comparative Study on Transformer vs RNN in Speech Applications
 
-**Theme 4: Applications of RNNs in Time Series Forecasting**
-- [shiri2023comprehensive] A Comprehensive Overview and Comparative Analysis on Deep Learning Models: CNN, RNN, LSTM, GRU  
-  Abstract: Provides a comprehensive comparison of deep learning models, including RNNs, for time series forecasting.
-- [zhang2024mos2based] MoS2-Based Charge Trapping Layer Enabled Triboelectric Nanogenerator with Assistance of CNN-GRU Model for Intelligent Perception  
-  Abstract: Discusses the use of GRU in conjunction with CNN for intelligent perception in triboelectric nanogenerators.
-- [kilichev2024nextgeneration] Next–Generation Intrusion Detection for IoT EVCS: Integrating CNN, LSTM, and GRU Models  
-  Abstract: Explores the integration of CNN, LSTM, and GRU models for intrusion detection in IoT-based electric vehicle charging stations.
+### Theme 4: Neural Networks for Time Series and Sequential Data
+- [du2020efficient] An Efficient LSTM Network for Emotion Recognition From Multichannel EEG Signals
+- [yadav2023noalstm] NOA-LSTM: An efficient LSTM cell architecture for time series forecasting
+- [shiri2023comprehensive] A Comprehensive Overview and Comparative Analysis on Deep Learning Models: CNN, RNN, LSTM, GRU
 
-**Theme 5: Hybrid Models Combining RNNs with Other Architectures**
-- [ahmed2024brain] Brain tumor detection and classification in MRI using hybrid ViT and GRU model with explainable AI in Southern Bangladesh  
-  Abstract: Proposes a hybrid model combining Vision Transformers (ViT) and GRU for brain tumor detection and classification.
-- [alma2023rnn] RNN LSTM-based emotion recognition using EEG signals  
-  Abstract: Uses RNN and LSTM models to recognize emotions from EEG signals.
+### Theme 5: Applications of Neural Networks in Machine Translation and Speech Processing
+- [cho2014learning] Learning Phrase Representations using RNN Encoder–Decoder for Statistical Machine Translation
+- [li2019neural] Neural Speech Synthesis with Transformer Network
+- [radfordet2018] Attention Is All You Need
 
-**Theme 6: Emerging Trends in RNN Research**
-- [waqas2024critical] A critical review of RNN and LSTM variants in hydrological time series predictions  
-  Abstract: Reviews the application of RNN and LSTM models for hydrological time series prediction.
-- [upadhyay2023enhancing] Enhancing Stock Market Predictability: A Comparative Analysis of RNN And LSTM Models for Retail Investors  
-  Abstract: Compares RNN and LSTM models for stock market prediction, focusing on retail investors.
+### Theme 6: Efficient and Scalable Deep Learning Architectures
+- [du2020efficient] An Efficient LSTM Network for Emotion Recognition From Multichannel EEG Signals
+- [shiri2023comprehensive] A Comprehensive Overview and Comparative Analysis on Deep Learning Models: CNN, RNN, LSTM, GRU
 
-**Theme 7: Applications in Natural Language Processing (NLP)**
-- [sheri2023comprehensive] A Comprehensive Overview and Comparative Analysis on Deep Learning Models: CNN, RNN, LSTM, GRU  
-  Abstract: Discusses the application of deep
+### Theme 7: Neural Networks for Emotion Recognition and Sentiment Analysis
+- [devlin2019bert] BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding (implied relevance to sentiment analysis)
+- [karita2019comparative] A Comparative Study on Transformer vs RNN in Speech Applications (indirect relevance)
+
+### Theme 8: Neural Networks for Multimodal Learning
+- [yadav2023noalstm] NOA-LSTM: An efficient LSTM cell architecture for time series forecasting (multimodal potential)
+- [shiri2023comprehensive] A Comprehensive Overview and Comparative Analysis on Deep Learning Models: CNN, RNN, LSTM, GRU (multimodal applications)
+
+### Theme 9: Neural Networks for Speech Recognition and Automatic Speech Recognition
+- [huang2015bidirectional] Bidirectional LSTM-CRF Models for Sequence Tagging (ASR)
+- [li2019neural] Neural Speech Synthesis with Transformer Network (TTS)
+- [radfordet2018] Attention Is All You Need (transformer in ASR)
+
+### Theme 10: Neural Networks for Image and Video Understanding
+- [touvron2020training] Training data-efficient image transformers & distillation through attention
+- [caron2021emerging] Emerging Properties in Self-Supervised Vision Transformers
+- [xie2021segformer] SegFormer: Simple and Efficient Design for Semantic Segmentation with Transformers
+
+### Theme 11: Neural Networks for Natural Language Processing (NLP)
+- [hochreiter1997long] Long Short-Term Memory
+- [greff2015lstm] LSTM: A Search Space Odyssey
+- [sherstinsky2018fundamentals] Fundamentals of Recurrent Neural Network (RNN) and Long Short-Term Memory (LSTM) Network
+- [cho2014learning] Learning Phrase Representations using RNN Encoder–Decoder for Statistical Machine Translation
+
+### Theme
 
 ## References
 
 ```bibtex
-@article{cho2014learning,
-  title={Learning Phrase Representations using RNN Encoder–Decoder for Statistical Machine Translation},
-  author={Kyunghyun Cho and B. V. Merrienboer and Çaglar Gülçehre and Dzmitry Bahdanau and Fethi Bougares and Holger Schwenk and Yoshua Bengio},
-  year={2014},
-  doi={10.3115/v1/D14-1179},
-  journal={arXiv preprint arXiv:1406.1078},
+@article{hochreiter1997long,
+  title={Long Short-Term Memory},
+  author={Sepp Hochreiter and Jürgen Schmidhuber},
+  year={1997},
+  doi={10.1162/neco.1997.9.8.1735},
 }
 
 @article{greff2015lstm,
@@ -75,6 +85,50 @@ The following is a 'Related Work' section based on the User Idea to make RNN mod
   journal={arXiv preprint arXiv:1808.03314},
 }
 
+@article{alselwi2024rnnlstm,
+  title={RNN-LSTM: From applications to modeling techniques and beyond - Systematic review},
+  author={Safwan Mahmood Al-Selwi and Mohd Fadzil Hassan and S. J. Abdulkadir and Amgad Muneer and Ebrahim Hamid Hasan Sumiea and Alawi Alqushaibi and M. G. Ragab},
+  year={2024},
+  doi={10.1016/j.jksuci.2024.102068},
+}
+
+@article{touvron2020training,
+  title={Training data-efficient image transformers & distillation through attention},
+  author={Hugo Touvron and M. Cord and Matthijs Douze and Francisco Massa and Alexandre Sablayrolles and Herv'e J'egou},
+  year={2020},
+  journal={arXiv preprint arXiv:2012.12877},
+}
+
+@article{caron2021emerging,
+  title={Emerging Properties in Self-Supervised Vision Transformers},
+  author={Mathilde Caron and Hugo Touvron and Ishan Misra and Herv'e J'egou and J. Mairal and Piotr Bojanowski and Armand Joulin},
+  year={2021},
+  doi={10.1109/ICCV48922.2021.00951},
+  journal={arXiv preprint arXiv:2104.14294},
+}
+
+@article{xie2021segformer,
+  title={SegFormer: Simple and Efficient Design for Semantic Segmentation with Transformers},
+  author={Enze Xie and Wenhai Wang and Zhiding Yu and Anima Anandkumar and J. Álvarez and Ping Luo},
+  year={2021},
+  journal={arXiv preprint arXiv:2105.15203},
+}
+
+@article{chen2021transunet,
+  title={TransUNet: Transformers Make Strong Encoders for Medical Image Segmentation},
+  author={Jieneng Chen and Yongyi Lu and Qihang Yu and Xiangde Luo and Ehsan Adeli and Yan Wang and Le Lu and A. Yuille and Yuyin Zhou},
+  year={2021},
+  journal={arXiv preprint arXiv:2102.04306},
+}
+
+@article{devlin2019bert,
+  title={BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding},
+  author={Jacob Devlin and Ming-Wei Chang and Kenton Lee and Kristina Toutanova},
+  year={2019},
+  doi={10.18653/v1/N19-1423},
+  journal={arXiv preprint arXiv:1810.04805},
+}
+
 @article{huang2015bidirectional,
   title={Bidirectional LSTM-CRF Models for Sequence Tagging},
   author={Zhiheng Huang and W. Xu and Kai Yu},
@@ -82,32 +136,25 @@ The following is a 'Related Work' section based on the User Idea to make RNN mod
   journal={arXiv preprint arXiv:1508.01991},
 }
 
-@article{thangavel2023novel,
-  title={A novel method for image captioning using multimodal feature fusion employing mask RNN and LSTM models},
-  author={K. Thangavel and Natesan Palanisamy and S. Muthusamy and O. Mishra and Suma Christal Mary Sundararajan and H. Panchal and A. Loganathan and Ponarun Ramamoorthi},
-  year={2023},
-  doi={10.1007/s00500-023-08448-7},
+@article{karita2019comparative,
+  title={A Comparative Study on Transformer vs RNN in Speech Applications},
+  author={Shigeki Karita and Nanxin Chen and Tomoki Hayashi and Takaaki Hori and Hirofumi Inaguma},
+  year={2019},
+  doi={10.1109/asru46091.2019.9003750},
 }
 
-@article{upadhyay2023enhancing,
-  title={Enhancing Stock Market Predictability: A Comparative Analysis of RNN And LSTM Models for Retail Investors},
-  author={Nevendra Kr Upadhyay},
-  year={2023},
-  doi={10.54060/jmss.v3i1.42},
+@article{du2020efficient,
+  title={An Efficient LSTM Network for Emotion Recognition From Multichannel EEG Signals},
+  author={Xiaobing Du and Cuixia Ma and Guanhua Zhang and Jinyao Li and Yu‐Kun Lai},
+  year={2020},
+  doi={10.1109/taffc.2020.3013711},
 }
 
-@article{cao2024stock,
-  title={Stock Price Prediction Using Deep-Learning Models: CNN, RNN, and LSTM},
-  author={Ruixun Cao},
-  year={2024},
-  doi={10.1051/shsconf/202419602004},
-}
-
-@article{birdi2023forex,
-  title={Forex trend analysis using RNN and LSTM models: Predictive analytics through neural networks},
-  author={Nitin Birdi and P. Sarangi and Tanishq Singla and A. Sahoo and Girija Bhusan Subudhi},
+@article{yadav2023noalstm,
+  title={NOA-LSTM: An efficient LSTM cell architecture for time series forecasting},
+  author={Hemant Yadav and Amit Thakkar},
   year={2023},
-  doi={10.1109/CISES58720.2023.10183561},
+  doi={10.1016/j.eswa.2023.122333},
 }
 
 @article{shiri2023comprehensive,
@@ -118,31 +165,18 @@ The following is a 'Related Work' section based on the User Idea to make RNN mod
   journal={arXiv preprint arXiv:2305.17473},
 }
 
-@article{zhang2024mos2based,
-  title={MoS2-Based Charge Trapping Layer Enabled Triboelectric Nanogenerator with Assistance of CNN-GRU Model for Intelligent Perception},
-  author={Hao Zhang and Dongzhi Zhang and Ruiyuan Mao and Lina Zhou and Chun-Xia Yang and Yan Wu and Yukun Liu and Yuncheng Ji},
-  year={2024},
-  doi={10.1016/j.nanoen.2024.109753},
+@article{cho2014learning,
+  title={Learning Phrase Representations using RNN Encoder–Decoder for Statistical Machine Translation},
+  author={Kyunghyun Cho and B. V. Merrienboer and Çaglar Gülçehre and Dzmitry Bahdanau and Fethi Bougares and Holger Schwenk and Yoshua Bengio},
+  year={2014},
+  doi={10.3115/v1/D14-1179},
+  journal={arXiv preprint arXiv:1406.1078},
 }
 
-@article{kilichev2024nextgeneration,
-  title={Next–Generation Intrusion Detection for IoT EVCS: Integrating CNN, LSTM, and GRU Models},
-  author={Dusmurod Kilichev and Dilmurod Turimov and Wooseong Kim},
-  year={2024},
-  doi={10.3390/math12040571},
-}
-
-@article{ahmed2024brain,
-  title={Brain tumor detection and classification in MRI using hybrid ViT and GRU model with explainable AI in Southern Bangladesh},
-  author={Md. Mahfuz Ahmed and Md. Maruf Hossain and Md. Rakibul Islam and Md. Shahin Ali and Abdullah Al Nomaan Nafi and Md. Faisal Ahmed and Kazi Mowdud Ahmed and M. Miah and Md. Mahbubur Rahman and Ming-bo Niu and Md. Khairul Islam},
-  year={2024},
-  doi={10.1038/s41598-024-71893-3},
-}
-
-@article{waqas2024critical,
-  title={A critical review of RNN and LSTM variants in hydrological time series predictions},
-  author={Muhammad Waqas and U. Humphries},
-  year={2024},
-  doi={10.1016/j.mex.2024.102946},
+@article{li2019neural,
+  title={Neural Speech Synthesis with Transformer Network},
+  author={Naihan Li and Shujie Liu and Yanqing Liu and Sheng Zhao and Ming Liu},
+  year={2019},
+  doi={10.1609/aaai.v33i01.33016706},
 }
 ```

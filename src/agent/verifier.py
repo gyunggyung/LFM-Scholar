@@ -15,6 +15,8 @@ class CitationVerifier:
         Returns (modified_text_with_fixed_keys, bibtex_string)
         Also detects potential hallucinations (citations not in paper_map).
         """
+        from difflib import get_close_matches
+        
         # Find all [Key] patterns
         # LFM2 might generate [AuthorYearKeyword] or \cite{...}
         # We assume it follows instructions to use [Key]
@@ -25,8 +27,10 @@ class CitationVerifier:
         # Track verified vs suspicious citations
         verified_keys = []
         suspicious_keys = []
+        fixed_keys = {}  # Map: wrong_key -> correct_key
         
         used_papers = []
+        valid_keys_list = list(self.paper_map.keys())
         
         for key in found_keys:
             if key in self.paper_map:
@@ -35,7 +39,30 @@ class CitationVerifier:
             else:
                 # Check if it looks like a citation key (author+year pattern)
                 if re.match(r'^[a-z]+\d{4}', key.lower()):
-                    suspicious_keys.append(key)
+                    # Try to find close match (fix typos)
+                    matches = get_close_matches(key.lower(), [k.lower() for k in valid_keys_list], n=1, cutoff=0.7)
+                    if matches:
+                        # Find the original case key
+                        correct_key = next((k for k in valid_keys_list if k.lower() == matches[0]), None)
+                        if correct_key:
+                            fixed_keys[key] = correct_key
+                            verified_keys.append(correct_key)
+                            used_papers.append(self.paper_map[correct_key])
+                        else:
+                            suspicious_keys.append(key)
+                    else:
+                        suspicious_keys.append(key)
+        
+        # Apply fixes to text
+        modified_text = text
+        for wrong_key, correct_key in fixed_keys.items():
+            modified_text = modified_text.replace(f'[{wrong_key}]', f'[{correct_key}]')
+        
+        # Log fixed citations
+        if fixed_keys:
+            print(f"[Verifier] 🔧 Auto-fixed {len(fixed_keys)} citation keys:")
+            for wrong, correct in list(fixed_keys.items())[:5]:
+                print(f"  - [{wrong}] → [{correct}]")
         
         # Remove duplicates
         used_papers = list({p.paper_id: p for p in used_papers}.values())
@@ -53,7 +80,7 @@ class CitationVerifier:
         
         bib_entries = [generate_bibtex_entry(p) for p in used_papers]
         
-        return text, "\n\n".join(bib_entries)
+        return modified_text, "\n\n".join(bib_entries)
 
     def verify_and_fix(self, text: str, used_keys: List[str]) -> Tuple[str, str]:
         # Alternative method if LLM returns list of used keys explicitly
