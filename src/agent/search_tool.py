@@ -87,12 +87,12 @@ class PaperSearcher:
                 "fields": "title,authors,year,citationCount,paperId,externalIds,abstract"
             }
             
-            # Retry logic with exponential backoff
-            max_retries = 3
+            # Quick retry with minimal wait (1s) then fallback
+            max_retries = 1
             for i in range(max_retries):
                 response = self.session.get(url, params=params, timeout=10)
                 if response.status_code == 429:
-                    wait_time = (i + 1) * 2
+                    wait_time = 1  # Minimal wait
                     print(f"[Search] Semantic Scholar rate limit. Waiting {wait_time}s...")
                     time.sleep(wait_time)
                     continue
@@ -100,7 +100,7 @@ class PaperSearcher:
             
             # If rate limit persists after retries, return empty to trigger OpenAlex
             if response.status_code == 429:
-                print("[Search] Semantic Scholar rate limit exceeded after retries.")
+                print("[Search] Semantic Scholar rate limit. Switching to fallback...")
                 return []
                 
             if response.status_code != 200:

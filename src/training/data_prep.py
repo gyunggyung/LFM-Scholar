@@ -5,8 +5,8 @@ import argparse
 import glob
 import sys
 import logging
+import threading
 from typing import List, Dict, Optional
-import bibtexparser
 from tqdm import tqdm
 
 # Add project root to path
@@ -33,9 +33,21 @@ def parse_latex_content(latex_content: str) -> Dict[str, str]:
 def load_bib_file(bib_path: str) -> Dict[str, Dict]:
     if not os.path.exists(bib_path):
         return {}
+    
+    # Skip large bib files (>500KB) - they cause parsing hangs
+    if os.path.getsize(bib_path) > 500 * 1024:
+        logging.warning(f"Skipping large bib file: {bib_path}")
+        return {}
+    
     try:
-        with open(bib_path, 'r', encoding='utf-8') as bibtex_file:
-            bib_database = bibtexparser.load(bibtex_file)
+        import bibtexparser
+        with open(bib_path, 'r', encoding='utf-8', errors='ignore') as bibtex_file:
+            content = bibtex_file.read()
+            # Skip if too many entries (parser hangs on huge files)
+            if content.count('@') > 500:
+                logging.warning(f"Skipping bib with too many entries: {bib_path}")
+                return {}
+            bib_database = bibtexparser.loads(content)
         entries = {}
         for entry in bib_database.entries:
             if 'ID' in entry:

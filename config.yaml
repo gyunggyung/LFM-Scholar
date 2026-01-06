@@ -8,11 +8,11 @@ model:
   type: "gguf" # 'transformers' or 'gguf'
   
   # Model Variant Selection: 'lfm2' or 'lfm2.5'
-  # - lfm2: Fine-tuned LFM2-2.6B-Exp (your custom model)
-  # - lfm2.5: Official LFM2.5-1.2B-Instruct (faster, more pretraining)
+  # - lfm2: Fine-tuned LFM2-2.6B-Exp (97 samples, v1)
+  # - lfm2.5: Fine-tuned LFM2.5-1.2B-Instruct (97 samples, v1)
   variant: "lfm2"  # Default to fine-tuned model
   
-  # LFM2 (Fine-tuned by gyung) - 2.6B params, 10T tokens
+  # LFM2 v1 (Fine-tuned by gyung) - 2.6B params, 97 samples
   lfm2:
     base: "gyung/LFM-CiteAgent-2.6B-GGUF"
     file: "LFM2-2.6B-Exp.Q4_K_M.gguf"
@@ -21,7 +21,7 @@ model:
       min_p: 0.15
       repetition_penalty: 1.05
   
-  # LFM2.5 (Fine-tuned by gyung) - 1.2B params, 28T tokens, faster inference
+  # LFM2.5 v1 (Fine-tuned by gyung) - 1.2B params, 97 samples
   lfm2.5:
     base: "gyung/LFM2.5-CiteAgent-1.2B-v1-GGUF"
     file: "LFM2.5-1.2B-Instruct.Q4_K_M.gguf"

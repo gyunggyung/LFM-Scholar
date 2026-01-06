@@ -35,7 +35,7 @@ pip install -r requirements.txt
 python src/main.py --idea "I want to make RNN models like LSTM and GRU faster than Transformers"
 
 # 빠른 모드 (LFM2.5-1.2B 모델) 및 출력 파일 지정
-python src/main.py --idea "I want to make RNN models like LSTM and GRU faster than Transformers" --model-variant lfm2.5 --output my_related_work.md
+python src/main.py --idea "I want to make RNN models like LSTM and GRU faster than Transformers" --model-variant lfm2.5 --output related_work_25.md
 
 # 결과 확인
 cat related_work.md
