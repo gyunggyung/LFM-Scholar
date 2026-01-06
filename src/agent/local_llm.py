@@ -69,6 +69,7 @@ class LocalLLM:
         self.model = Llama(
             model_path=model_path,
             n_ctx=4096, # Optimized Context Size
+            n_batch=4096, # Match Context Size to avoid decoding errors
             n_threads=physical_cores,
             verbose=False 
         )
@@ -219,8 +220,8 @@ List of tools: <|tool_list_start|>{tools_json}<|tool_list_end|>"""
         for iteration in range(max_iterations):
             # Generate response
             if self.model_type == 'gguf':
-                if hasattr(self.model, "reset") and iteration > 0:
-                    pass  # Don't reset between iterations
+                if hasattr(self.model, "reset"):
+                    self.model.reset()  # Force reset to avoid KV cache fragmentation/overflow
                     
                 output = self.model(
                     prompt,
