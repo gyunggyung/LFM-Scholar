@@ -28,6 +28,8 @@ cd LFM-Scholar
 pip install -r requirements.txt
 ```
 
+> **🪟 Windows 사용자**: `pip install` 전에 [Visual C++ Build Tools](https://visualstudio.microsoft.com/ko/visual-cpp-build-tools/)를 먼저 설치해주세요.
+
 ### Usage & Example
 
 ```bash
